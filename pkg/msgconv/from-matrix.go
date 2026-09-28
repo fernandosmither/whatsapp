@@ -122,6 +122,12 @@ func (mc *MessageConverter) ToWhatsApp(
 			return nil, nil, err
 		}
 		message = mc.constructMediaMessage(ctx, content, evt, uploaded, thumbnail, contextInfo, mime)
+		if content.BeeperViewOnce {
+			message, err = wrapViewOnce(message)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
 	case event.MsgLocation:
 		lat, long, err := parseGeoURI(content.GeoURI)
 		if err != nil {
@@ -305,6 +311,18 @@ func (mc *MessageConverter) constructMediaMessage(
 	default:
 		return nil
 	}
+}
+
+func wrapViewOnce(message *waE2E.Message) (*waE2E.Message, error) {
+	switch {
+	case message.GetImageMessage() != nil:
+		message.ImageMessage.ViewOnce = proto.Bool(true)
+	case message.GetVideoMessage() != nil:
+		message.VideoMessage.ViewOnce = proto.Bool(true)
+	default:
+		return nil, fmt.Errorf("%w: only images and videos can be sent as view-once", bridgev2.ErrViewOnceNotAllowed)
+	}
+	return &waE2E.Message{ViewOnceMessageV2: &waE2E.FutureProofMessage{Message: message}}, nil
 }
 
 func (mc *MessageConverter) parseText(ctx context.Context, content *event.MessageEventContent) (text string, mentions []string) {
