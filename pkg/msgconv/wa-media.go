@@ -64,6 +64,7 @@ func (mc *MessageConverter) convertMediaMessage(
 	}
 	preparedMedia := prepareMediaMessage(msg)
 	preparedMedia.TypeDescription = typeName
+	preparedMedia.BeeperViewOnce = isViewOnce
 	if preparedMedia.FileName != "" && preparedMedia.Body != preparedMedia.FileName {
 		mc.parseFormatting(preparedMedia.MessageEventContent, false, false)
 	}
